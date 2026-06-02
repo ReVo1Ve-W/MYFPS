@@ -4811,6 +4811,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a99f246eb9c9ea42b1b7ca384432816, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moveSpeed: 5
+  xSensitivity: 2
+  ySensitivity: 2
 --- !u!43 &496861716
 Mesh:
   m_ObjectHideFlags: 0
