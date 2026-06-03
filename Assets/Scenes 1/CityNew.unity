@@ -4811,10 +4811,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a99f246eb9c9ea42b1b7ca384432816, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
+  walkSpeed: 5
+  runSpeed: 7
   jumpForce: 5
-  xSensitivity: 2
-  ySensitivity: 2
+  xSensitivity: 10
+  ySensitivity: 10
+  lookClamp: 90
   highSpeed: 0
   isAiming: 0
 --- !u!114 &479929035

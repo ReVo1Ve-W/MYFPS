@@ -1,145 +1,119 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerControl : MonoBehaviour
 {
+    [Header("移动")]
+    public float walkSpeed = 5f;
+    public float runSpeed = 7f;
+    public float jumpForce = 5f;
 
-    //速度
-     public float moveSpeed = 5f;
-    public float jumpForce=5f;
+    [Header("视角")]
+    public float sensitivity = 3f;
+    [Range(0, 90)] public float lookClamp = 90f;
 
-    //灵敏度
-    public float xSensitivity = 10;
-    public float ySensitivity = 10;
+    [HideInInspector] public bool highSpeed;
+    [HideInInspector] public bool isAiming;
 
-    //状态判断
-    [HideInInspector]
-    public bool highSpeed=false;
-     [HideInInspector]
-    public bool isAiming=false;
-
-
-    private float xRotation = 0;
+    private float xRotation;
+    private float mouseX, mouseY;
     private Rigidbody rb;
     private Animator anim;
-    private Vector3 velocity;
-    private bool jump=false;
+    private float moveSpeed;
+    private Vector3 moveVelocity;
+    private bool jump;
+    private bool grounded;
+
+    private static readonly int ParamAim       = Animator.StringToHash("Aim");
+    private static readonly int ParamAiming    = Animator.StringToHash("Aiming");
+    private static readonly int ParamHolstered = Animator.StringToHash("Holstered");
+    private static readonly int ParamMovement  = Animator.StringToHash("Movement");
+
+    void Awake()
+    {
+        // 240Hz 优化：提高物理频率，关闭 VSync
+        Time.fixedDeltaTime = 1f / 120f;
+        Application.targetFrameRate = 240;
+        QualitySettings.vSyncCount = 0;
+    }
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
-        Cursor.lockState=CursorLockMode.Locked;
+
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.freezeRotation = true;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        moveSpeed = walkSpeed;
     }
 
-    // Update is called once per frame
     void Update()
     {
+        // 只采集输入，不做旋转（等 LateUpdate 在 Animator 之后统一做）
+        mouseX = Input.GetAxisRaw("Mouse X") * sensitivity;
+        mouseY = Input.GetAxisRaw("Mouse Y") * sensitivity;
+
         Aim();
-        Mouse();
         HighSpeed();
-        Move();
-        Jump();
-        //transform.position+Vector3.up*0.2f,-Vector3.up,out hit,
-        //Debug.DrawRay(transform.position+Vector3.up*0.2f,-Vector3.up*0.4f,Color.red);
+
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+        Vector3 dir = (transform.forward * v) + (transform.right * h);
+        if (dir.sqrMagnitude > 1f) dir.Normalize();
+        moveVelocity = dir * moveSpeed;
+        anim.SetFloat(ParamMovement, dir.magnitude);
+
+        if (Input.GetKeyDown(KeyCode.Space) && grounded)
+            jump = true;
+    }
+
+    void LateUpdate()
+    {
+        // 全部旋转在 LateUpdate 执行——Animator 已经跑完，不会冲突
+        transform.Rotate(0, mouseX, 0);
+
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -lookClamp, lookClamp);
+        anim.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
+    }
+
+    void FixedUpdate()
+    {
+        grounded = IsGround();
+
+        Vector3 vel = moveVelocity;
+        vel.y = rb.velocity.y;
+        rb.velocity = vel;
+
+        if (jump)
+        {
+            jump = false;
+            rb.velocity = new Vector3(rb.velocity.x, jumpForce, rb.velocity.z);
+        }
     }
 
     void Aim()
     {
-        if (Input.GetMouseButton(1))
-        {
-            isAiming=true;
-            anim.SetBool("Aim", true );
-            float aim =anim.GetFloat("Aiming");
-            anim.SetFloat("Aiming",Mathf.Lerp(aim,1,0.1f));
-        }
-        else
-        {
-            isAiming=false;
-            anim.SetBool("Aim", false );
-            float aim =anim.GetFloat("Aiming");
-            anim.SetFloat("Aiming",Mathf.Lerp(aim,0,0.1f));
-        }
+        bool aiming = Input.GetMouseButton(1);
+        isAiming = aiming;
+        anim.SetBool(ParamAim, aiming);
 
-    }
-
-    //鼠标旋转
-    void Mouse()
-    {
-        //获取鼠标输入
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y"); 
-
-        //上下旋转
-        xRotation -= mouseY*ySensitivity;
-        xRotation = Mathf.Clamp(xRotation, -90, 90);
-        anim.transform.localRotation = Quaternion.Euler(xRotation, 0, 0);
-        //左右旋转
-        transform.Rotate(Vector3.up*xSensitivity*mouseX);
-    }
-    void Move()
-    {
-        //获取输入
-        float horizontal = Input.GetAxis("Horizontal");  
-        float vertical = Input.GetAxis("Vertical");
-        //计算移动方向
-        Vector3 dir = transform.forward * vertical + transform.right * horizontal;
-        dir.Normalize();
-        //速度
-        velocity = dir * moveSpeed;
-        velocity.y = rb.velocity.y;
-        //动画
-        anim.SetFloat("Movement", dir.magnitude);
-       
+        float target = aiming ? 1f : 0f;
+        anim.SetFloat(ParamAiming, Mathf.Lerp(anim.GetFloat(ParamAiming), target, 0.1f));
     }
 
     void HighSpeed()
     {
-        if(Input.GetKey(KeyCode.LeftShift)&&IsGround())
-        {
-            highSpeed=true;
-            moveSpeed = 7;
-            anim.SetBool("Holstered",true);
-        }
-        else
-        {
-            highSpeed=false;
-            moveSpeed = 5;
-            anim.SetBool("Holstered",false);
-
-        }
+        bool running = Input.GetKey(KeyCode.LeftShift) && grounded;
+        highSpeed = running;
+        moveSpeed = running ? runSpeed : walkSpeed;
+        anim.SetBool(ParamHolstered, running);
     }
 
-    void Jump()
+    bool IsGround()
     {
-        if (Input.GetKey(KeyCode.Space)&&IsGround())
-        {
-            jump=true;
-        }
+        return Physics.Raycast(transform.position + Vector3.up * 0.2f,
+                               Vector3.down, 0.4f, LayerMask.GetMask("Ground"));
     }
-
-    public bool IsGround()
-    {
-        RaycastHit hit;
-        bool res = Physics.Raycast(transform.position+Vector3.up*0.2f,-Vector3.up,out hit,0.4f,LayerMask.GetMask("Ground"));
-        return res;
-    }
-
-
-
-
-    private void FixedUpdate()
-    {
-        if (jump)
-        {
-            jump=false;
-            velocity.y=jumpForce;
-        }
-        rb.velocity=velocity;
-    }
-
-
-
-
 }
