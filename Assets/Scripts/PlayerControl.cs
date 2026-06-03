@@ -6,13 +6,19 @@ public class PlayerControl : MonoBehaviour
 {
 
     //速度
-    public float moveSpeed = 5f;
-
+     public float moveSpeed = 5f;
     public float jumpForce=5f;
+
     //灵敏度
     public float xSensitivity = 10;
-
     public float ySensitivity = 10;
+
+    //状态判断
+    [HideInInspector]
+    public bool highSpeed=false;
+     [HideInInspector]
+    public bool isAiming=false;
+
 
     private float xRotation = 0;
     private Rigidbody rb;
@@ -43,11 +49,15 @@ public class PlayerControl : MonoBehaviour
     {
         if (Input.GetMouseButton(1))
         {
+            isAiming=true;
+            anim.SetBool("Aim", true );
             float aim =anim.GetFloat("Aiming");
             anim.SetFloat("Aiming",Mathf.Lerp(aim,1,0.1f));
         }
         else
         {
+            isAiming=false;
+            anim.SetBool("Aim", false );
             float aim =anim.GetFloat("Aiming");
             anim.SetFloat("Aiming",Mathf.Lerp(aim,0,0.1f));
         }
@@ -88,13 +98,15 @@ public class PlayerControl : MonoBehaviour
     {
         if(Input.GetKey(KeyCode.LeftShift)&&IsGround())
         {
+            highSpeed=true;
             moveSpeed = 7;
             anim.SetBool("Holstered",true);
         }
         else
         {
+            highSpeed=false;
             moveSpeed = 5;
-             anim.SetBool("Holstered",false);
+            anim.SetBool("Holstered",false);
 
         }
     }
