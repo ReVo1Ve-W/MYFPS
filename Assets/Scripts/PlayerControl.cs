@@ -113,7 +113,6 @@ public class PlayerControl : MonoBehaviour
 
     bool IsGround()
     {
-        return Physics.Raycast(transform.position + Vector3.up * 0.2f,
-                               Vector3.down, 0.4f, LayerMask.GetMask("Ground"));
+        return Physics.Raycast(transform.position + Vector3.up * 0.2f, Vector3.down, 0.4f, LayerMask.GetMask("Ground"));
     }
 }

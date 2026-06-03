@@ -4834,6 +4834,21 @@ MonoBehaviour:
   BulletPre: {fileID: 7013027967544717779, guid: fda453ae70081bf47aa70e84d288d28d, type: 3}
   FirePre: {fileID: 339995099384428807, guid: d3778e0057847224b9a77e894f0780d9, type: 3}
   bulletInterval: 0.1
+--- !u!114 &479929036
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 479929027}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69427857d52c42545854f6aad2c5942e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  X: -3
+  speed: 10
+  returnSpeed: 6
 --- !u!43 &496861716
 Mesh:
   m_ObjectHideFlags: 0
@@ -10959,6 +10974,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2751027687307977091, guid: 19eadcf8fbed56b4da77ca94c1b4145f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 479929035}
+    - targetCorrespondingSourceObject: {fileID: 2751027687307977091, guid: 19eadcf8fbed56b4da77ca94c1b4145f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 479929036}
   m_SourcePrefab: {fileID: 100100000, guid: 19eadcf8fbed56b4da77ca94c1b4145f, type: 3}
 --- !u!1001 &1139416300
 PrefabInstance:
