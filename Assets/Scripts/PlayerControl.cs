@@ -41,7 +41,7 @@ public class PlayerControl : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
 
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.interpolation = RigidbodyInterpolation.Extrapolate;
         rb.freezeRotation = true;
 
         Cursor.lockState = CursorLockMode.Locked;

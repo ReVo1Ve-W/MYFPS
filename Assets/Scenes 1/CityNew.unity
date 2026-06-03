@@ -4814,8 +4814,7 @@ MonoBehaviour:
   walkSpeed: 5
   runSpeed: 7
   jumpForce: 5
-  xSensitivity: 10
-  ySensitivity: 10
+  sensitivity: 3
   lookClamp: 90
   highSpeed: 0
   isAiming: 0
@@ -6931,6 +6930,8 @@ PrefabInstance:
     - {fileID: 6035197157201893670, guid: 8c7ba79f8ec05794aba7ffdd3d8aba93, type: 3}
     - {fileID: 8866888881564896686, guid: 8c7ba79f8ec05794aba7ffdd3d8aba93, type: 3}
     - {fileID: 524015489424269637, guid: 8c7ba79f8ec05794aba7ffdd3d8aba93, type: 3}
+    - {fileID: 6959441203472173576, guid: 8c7ba79f8ec05794aba7ffdd3d8aba93, type: 3}
+    - {fileID: 1406960541904844308, guid: 8c7ba79f8ec05794aba7ffdd3d8aba93, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 8445401694593213622, guid: 8c7ba79f8ec05794aba7ffdd3d8aba93, type: 3}
