@@ -30,6 +30,7 @@ public class PlayerControl : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Aim();
         Mouse();
         HighSpeed();
         Move();
@@ -37,6 +38,22 @@ public class PlayerControl : MonoBehaviour
         //transform.position+Vector3.up*0.2f,-Vector3.up,out hit,
         //Debug.DrawRay(transform.position+Vector3.up*0.2f,-Vector3.up*0.4f,Color.red);
     }
+
+    void Aim()
+    {
+        if (Input.GetMouseButton(1))
+        {
+            float aim =anim.GetFloat("Aiming");
+            anim.SetFloat("Aiming",Mathf.Lerp(aim,1,0.1f));
+        }
+        else
+        {
+            float aim =anim.GetFloat("Aiming");
+            anim.SetFloat("Aiming",Mathf.Lerp(aim,0,0.1f));
+        }
+
+    }
+
     //鼠标旋转
     void Mouse()
     {
