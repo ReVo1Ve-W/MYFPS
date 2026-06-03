@@ -17,7 +17,8 @@ public class EnemyControl : MonoBehaviour
         HP-=damage;
         if (HP<=0)
         {
-           Instantiate(bombEffect,transform.position,Quaternion.identity);
+           var effect = Instantiate(bombEffect, transform.position, Quaternion.identity);
+           Destroy(effect, 2f);
            Destroy(gameObject);
         }
     }

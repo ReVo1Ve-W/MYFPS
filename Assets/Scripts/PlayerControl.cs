@@ -115,4 +115,16 @@ public class PlayerControl : MonoBehaviour
     {
         return Physics.Raycast(transform.position + Vector3.up * 0.2f, Vector3.down, 0.4f, LayerMask.GetMask("Ground"));
     }
+
+    public float playerHP = 100f;
+
+    public void TakeDamage(float damage)
+    {
+        playerHP -= damage;
+        if (playerHP <= 0)
+        {
+            playerHP = 0;
+            Debug.Log("Player died!");
+        }
+    }
 }
