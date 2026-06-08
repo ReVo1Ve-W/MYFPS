@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class PlayerHUD : MonoBehaviour
 {
     public PlayerControl player;
-    public Text hpText;
-    public Slider hpSlider;
+    public TextMeshProUGUI hpText;
+    public Image hpFill;
 
     void Start()
     {
@@ -20,7 +21,7 @@ public class PlayerHUD : MonoBehaviour
         float hp = Mathf.Max(0, player.playerHP);
         float maxHP = player.maxHP;
 
-        hpSlider.value = hp / maxHP;
+        hpFill.fillAmount = hp / maxHP;
         hpText.text = $"HP {hp:F0} / {maxHP}";
     }
 }
