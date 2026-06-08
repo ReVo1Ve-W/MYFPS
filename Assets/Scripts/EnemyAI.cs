@@ -30,6 +30,11 @@ public class EnemyAI : MonoBehaviour
     private float idleTimer;
     private float loseTimer;
     private float attackTimer;
+    private float pathUpdateTimer;
+    private const float pathUpdateInterval = 0.3f;
+
+    private float sqrDetectionRange;
+    private float sqrAttackRange;
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
 
@@ -44,6 +49,9 @@ public class EnemyAI : MonoBehaviour
     {
         startPosition = transform.position;
 
+        sqrDetectionRange = detectionRange * detectionRange;
+        sqrAttackRange = attackRange * attackRange;
+
         if (player == null)
         {
             var go = GameObject.FindWithTag("Player");
@@ -51,7 +59,7 @@ public class EnemyAI : MonoBehaviour
         }
 
         TransitionTo(State.Idle);
-        idleTimer = 0; // 第一轮先巡逻一次再等
+        idleTimer = 0;
     }
 
     void Update()
@@ -73,8 +81,7 @@ public class EnemyAI : MonoBehaviour
 
     void StateIdle()
     {
-        float dist = DistanceToPlayer();
-        if (dist <= detectionRange) { TransitionTo(State.Chase); return; }
+        if (PlayerInRange(detectionRange)) { TransitionTo(State.Chase); return; }
 
         idleTimer += Time.deltaTime;
         if (idleTimer >= patrolWaitTime)
@@ -107,11 +114,11 @@ public class EnemyAI : MonoBehaviour
 
     void StateChase()
     {
-        float dist = DistanceToPlayer();
+        float sqrDist = SqrDistanceToPlayer();
 
-        if (dist <= attackRange) { TransitionTo(State.Attack); return; }
+        if (sqrDist <= sqrAttackRange) { TransitionTo(State.Attack); return; }
 
-        if (dist > detectionRange)
+        if (sqrDist > sqrDetectionRange)
         {
             loseTimer += Time.deltaTime;
             if (loseTimer >= loseSightTimeout) { TransitionTo(State.Idle); return; }
@@ -121,7 +128,12 @@ public class EnemyAI : MonoBehaviour
             loseTimer = 0;
         }
 
-        agent.SetDestination(player.position);
+        pathUpdateTimer += Time.deltaTime;
+        if (pathUpdateTimer >= pathUpdateInterval)
+        {
+            pathUpdateTimer = 0;
+            agent.SetDestination(player.position);
+        }
         agent.isStopped = false;
     }
 
@@ -129,10 +141,10 @@ public class EnemyAI : MonoBehaviour
 
     void StateAttack()
     {
-        float dist = DistanceToPlayer();
+        float sqrDist = SqrDistanceToPlayer();
 
-        if (dist > detectionRange) { TransitionTo(State.Idle); return; }
-        if (dist > attackRange)   { TransitionTo(State.Chase); return; }
+        if (sqrDist > sqrDetectionRange) { TransitionTo(State.Idle); return; }
+        if (sqrDist > sqrAttackRange)   { TransitionTo(State.Chase); return; }
 
         agent.isStopped = true;
         FacePlayer();
@@ -154,12 +166,18 @@ public class EnemyAI : MonoBehaviour
         idleTimer = 0;
         loseTimer = 0;
         attackTimer = 0;
-        agent.isStopped = newState == State.Attack;
+        pathUpdateTimer = 0;
+        agent.isStopped = (newState == State.Attack);
     }
 
-    float DistanceToPlayer()
+    float SqrDistanceToPlayer()
     {
-        return Vector3.Distance(transform.position, player.position);
+        return (player.position - transform.position).sqrMagnitude;
+    }
+
+    bool PlayerInRange(float range)
+    {
+        return SqrDistanceToPlayer() <= range * range;
     }
 
     void FacePlayer()
