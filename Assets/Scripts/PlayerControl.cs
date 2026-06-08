@@ -117,10 +117,12 @@ public class PlayerControl : MonoBehaviour
     }
 
     public float playerHP = 100f;
+    public float maxHP = 100f;
 
     public void TakeDamage(float damage)
     {
         playerHP -= damage;
+        Debug.Log($"Player took {damage} damage, HP now {playerHP}");
         if (playerHP <= 0)
         {
             playerHP = 0;
