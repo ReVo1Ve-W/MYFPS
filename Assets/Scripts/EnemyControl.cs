@@ -52,7 +52,7 @@ public class EnemyControl : MonoBehaviour
         }
     }
 
-    void UpdateHPUI()
+    public void UpdateHPUI()
     {
         if (hpFill != null)
             hpFill.fillAmount = HP / maxHP;
