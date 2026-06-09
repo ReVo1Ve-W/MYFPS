@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class ObjectPool : MonoBehaviour
 {
@@ -18,13 +19,18 @@ public class ObjectPool : MonoBehaviour
     {
         poolDict = new Dictionary<string, Queue<GameObject>>();
 
+        // 找一个 NavMesh 上的位置，避免 NavMeshAgent 初始化报错
+        Vector3 spawnPos = transform.position;
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 100f, NavMesh.AllAreas))
+            spawnPos = hit.position;
+
         foreach (var pool in pools)
         {
             var queue = new Queue<GameObject>();
 
             for (int i = 0; i < pool.size; i++)
             {
-                var obj = Instantiate(pool.prefab, transform);
+                var obj = Instantiate(pool.prefab, spawnPos, Quaternion.identity, transform);
                 obj.SetActive(false);
                 queue.Enqueue(obj);
             }
@@ -43,9 +49,16 @@ public class ObjectPool : MonoBehaviour
 
         GameObject obj;
         if (queue.Count > 0)
+        {
             obj = queue.Dequeue();
+        }
         else
-            obj = Instantiate(pools[System.Array.FindIndex(pools, p => p.tag == tag)].prefab, transform);
+        {
+            Vector3 p = transform.position;
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 100f, NavMesh.AllAreas))
+                p = hit.position;
+            obj = Instantiate(pools[System.Array.FindIndex(pools, p => p.tag == tag)].prefab, p, Quaternion.identity, transform);
+        }
 
         obj.transform.SetPositionAndRotation(position, rotation);
         obj.SetActive(true);

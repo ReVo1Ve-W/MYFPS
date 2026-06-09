@@ -3,16 +3,11 @@ using UnityEngine.AI;
 
 public class EnemyAI : MonoBehaviour
 {
-    public enum State { Idle, Chase, Attack }
+    public enum State { Navigate, Attack }
 
     [Header("检测")]
-    public float detectionRange = 20f;
+    public float detectionRange = 30f;
     public float attackRange = 3f;
-    public float loseSightTimeout = 5f;
-
-    [Header("巡逻")]
-    public float patrolRadius = 15f;
-    public float patrolWaitTime = 2f;
 
     [Header("攻击")]
     public float attackDamage = 10f;
@@ -26,21 +21,13 @@ public class EnemyAI : MonoBehaviour
     private NavMeshAgent agent;
     private EnemyControl enemyControl;
     private Animator anim;
-    private Vector3 startPosition;
 
     private Transform currentTarget;
-    private float idleTimer;
-    private float loseTimer;
     private float attackTimer;
     private float pathUpdateTimer;
     private const float pathUpdateInterval = 0.3f;
 
-    private float sqrDetectionRange;
-    private float sqrAttackRange;
-
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
-
-    private bool initialized;
 
     void Awake()
     {
@@ -51,33 +38,23 @@ public class EnemyAI : MonoBehaviour
 
     void OnEnable()
     {
-        startPosition = transform.position;
-
-        sqrDetectionRange = detectionRange * detectionRange;
-        sqrAttackRange = attackRange * attackRange;
-
         if (player == null)
         {
             var go = GameObject.FindWithTag("Player");
             if (go != null) player = go.transform;
         }
-
         if (defenseTarget == null)
             defenseTarget = FindObjectOfType<DefenseTarget>();
 
-        state = State.Idle;
-        idleTimer = 0;
-        loseTimer = 0;
-        attackTimer = 0;
+        state = State.Navigate;
+        attackTimer = 1f;
         pathUpdateTimer = 0;
-
-        initialized = true;
+        agent.isStopped = false;
     }
 
     void Update()
     {
         if (enemyControl != null && enemyControl.HP <= 0) return;
-        if (!initialized) return;
 
         currentTarget = PickTarget();
         if (currentTarget == null) return;
@@ -86,86 +63,45 @@ public class EnemyAI : MonoBehaviour
 
         switch (state)
         {
-            case State.Idle:  StateIdle();  break;
-            case State.Chase: StateChase(); break;
-            case State.Attack: StateAttack(); break;
+            case State.Navigate: StateNavigate(); break;
+            case State.Attack:   StateAttack();   break;
         }
     }
-
-    // ═══════════════ 目标选择 ═══════════════
 
     Transform PickTarget()
     {
-        Transform best = null;
-
+        // 防御塔始终有效
         if (defenseTarget != null && defenseTarget.HP > 0)
-            best = defenseTarget.transform;
+        {
+            if (player == null)
+                return defenseTarget.transform;
+
+            float sqrToPlayer = (player.position - transform.position).sqrMagnitude;
+            float sqrToTower = (defenseTarget.transform.position - transform.position).sqrMagnitude;
+            float sqrDetect = detectionRange * detectionRange;
+
+            // 玩家在检测范围且比塔更近 → 攻击玩家，否则打塔
+            if (sqrToPlayer <= sqrDetect && sqrToPlayer < sqrToTower)
+                return player;
+            else
+                return defenseTarget.transform;
+        }
 
         if (player != null)
-        {
-            if (best == null)
-                best = player;
-            else
-            {
-                float sqrToPlayer = (player.position - transform.position).sqrMagnitude;
-                float sqrToBest   = (best.position - transform.position).sqrMagnitude;
-                if (sqrToPlayer < sqrToBest)
-                    best = player;
-            }
-        }
+            return player;
 
-        return best;
+        return null;
     }
 
-    // ═══════════════ 空闲 / 巡逻 ═══════════════
-
-    void StateIdle()
+    void StateNavigate()
     {
-        if (TargetInRange(detectionRange)) { TransitionTo(State.Chase); return; }
+        float sqrDist = (currentTarget.position - transform.position).sqrMagnitude;
+        float sqrAttack = attackRange * attackRange;
 
-        idleTimer += Time.deltaTime;
-        if (idleTimer >= patrolWaitTime)
+        if (sqrDist <= sqrAttack)
         {
-            idleTimer = 0;
-            if (FindPatrolPoint(out Vector3 point))
-            {
-                agent.SetDestination(point);
-                agent.isStopped = false;
-            }
-        }
-    }
-
-    bool FindPatrolPoint(out Vector3 point)
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            Vector3 random = startPosition + Random.insideUnitSphere * patrolRadius;
-            if (NavMesh.SamplePosition(random, out NavMeshHit hit, patrolRadius, NavMesh.AllAreas))
-            {
-                point = hit.position;
-                return true;
-            }
-        }
-        point = Vector3.zero;
-        return false;
-    }
-
-    // ═══════════════ 追击 ═══════════════
-
-    void StateChase()
-    {
-        float sqrDist = SqrDistanceToTarget();
-
-        if (sqrDist <= sqrAttackRange) { TransitionTo(State.Attack); return; }
-
-        if (sqrDist > sqrDetectionRange)
-        {
-            loseTimer += Time.deltaTime;
-            if (loseTimer >= loseSightTimeout) { TransitionTo(State.Idle); return; }
-        }
-        else
-        {
-            loseTimer = 0;
+            TransitionTo(State.Attack);
+            return;
         }
 
         pathUpdateTimer += Time.deltaTime;
@@ -177,14 +113,16 @@ public class EnemyAI : MonoBehaviour
         agent.isStopped = false;
     }
 
-    // ═══════════════ 攻击 ═══════════════
-
     void StateAttack()
     {
-        float sqrDist = SqrDistanceToTarget();
+        float sqrDist = (currentTarget.position - transform.position).sqrMagnitude;
+        float sqrAttack = attackRange * attackRange * 1.3f; // 退出攻击距离稍远
 
-        if (sqrDist > sqrDetectionRange) { TransitionTo(State.Idle); return; }
-        if (sqrDist > sqrAttackRange)   { TransitionTo(State.Chase); return; }
+        if (sqrDist > sqrAttack)
+        {
+            TransitionTo(State.Navigate);
+            return;
+        }
 
         agent.isStopped = true;
         FaceTarget();
@@ -200,26 +138,12 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // ═══════════════ 工具 ═══════════════
-
     void TransitionTo(State newState)
     {
         state = newState;
-        idleTimer = 0;
-        loseTimer = 0;
         attackTimer = 0;
         pathUpdateTimer = 0;
         agent.isStopped = (newState == State.Attack);
-    }
-
-    float SqrDistanceToTarget()
-    {
-        return (currentTarget.position - transform.position).sqrMagnitude;
-    }
-
-    bool TargetInRange(float range)
-    {
-        return SqrDistanceToTarget() <= range * range;
     }
 
     void FaceTarget()
@@ -227,7 +151,7 @@ public class EnemyAI : MonoBehaviour
         Vector3 dir = currentTarget.position - transform.position;
         dir.y = 0;
         if (dir.sqrMagnitude > 0.001f)
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 5f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 8f);
     }
 
     void UpdateAnimator()
@@ -242,7 +166,5 @@ public class EnemyAI : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, detectionRange);
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(Application.isPlaying ? startPosition : transform.position, patrolRadius);
     }
 }
