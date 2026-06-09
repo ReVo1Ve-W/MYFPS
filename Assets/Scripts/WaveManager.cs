@@ -53,11 +53,11 @@ public class WaveManager : MonoBehaviour
             {
                 waveText.SetActive(true);
                 var txt = waveText.GetComponentInChildren<TextMeshProUGUI>();
-                if (txt != null) txt.text = $"第 {currentWave} 波";
-                StartCoroutine(HideWaveText(2f));
+                if (txt != null) txt.text = $"Wave {currentWave}";
+                StartCoroutine(HideWaveText(3f));
             }
 
-            Debug.Log($"第 {currentWave} 波开始！敌人数量: {enemiesToSpawn}");
+            Debug.Log($"Wave {currentWave} started! Enemies: {enemiesToSpawn}");
 
             // 分批生成这一波的所有敌人
             for (int i = 0; i < enemiesToSpawn; i++)
@@ -70,7 +70,7 @@ public class WaveManager : MonoBehaviour
             while (enemiesAlive > 0)
                 yield return new WaitForSeconds(1f);
 
-            Debug.Log($"第 {currentWave} 波清除！下一波 {timeBetweenWaves} 秒后...");
+            Debug.Log($"Wave {currentWave} cleared! Next wave in {timeBetweenWaves}s...");
 
             // 下一波前等待
             yield return new WaitForSeconds(timeBetweenWaves);
