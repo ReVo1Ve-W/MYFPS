@@ -11,9 +11,23 @@ public class EnemyControl : MonoBehaviour
     public Image hpFill;
     public TextMeshProUGUI hpText;
 
-    void Start()
+    private EnemyAI ai;
+
+    void Awake()
     {
+        ai = GetComponent<EnemyAI>();
+    }
+
+    void OnEnable()
+    {
+        HP = maxHP;
         UpdateHPUI();
+        if (ai != null) ai.enabled = true;
+    }
+
+    void OnDisable()
+    {
+        if (ai != null) ai.enabled = false;
     }
 
     public void Gethit(float damage)
@@ -23,9 +37,18 @@ public class EnemyControl : MonoBehaviour
 
         if (HP <= 0)
         {
-            var effect = Instantiate(bombEffect, transform.position, Quaternion.identity);
-            Destroy(effect, 2f);
-            Destroy(gameObject);
+            if (bombEffect != null)
+            {
+                var effect = Instantiate(bombEffect, transform.position, Quaternion.identity);
+                Destroy(effect, 2f);
+            }
+
+            if (WaveManager.Instance != null)
+                WaveManager.Instance.OnEnemyKilled();
+            var hud = FindObjectOfType<PlayerHUD>();
+            if (hud != null) hud.AddKill();
+
+            gameObject.SetActive(false);
         }
     }
 

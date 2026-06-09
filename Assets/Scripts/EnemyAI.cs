@@ -40,6 +40,8 @@ public class EnemyAI : MonoBehaviour
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
 
+    private bool initialized;
+
     void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -47,7 +49,7 @@ public class EnemyAI : MonoBehaviour
         anim = GetComponent<Animator>();
     }
 
-    void Start()
+    void OnEnable()
     {
         startPosition = transform.position;
 
@@ -63,13 +65,19 @@ public class EnemyAI : MonoBehaviour
         if (defenseTarget == null)
             defenseTarget = FindObjectOfType<DefenseTarget>();
 
-        TransitionTo(State.Idle);
+        state = State.Idle;
         idleTimer = 0;
+        loseTimer = 0;
+        attackTimer = 0;
+        pathUpdateTimer = 0;
+
+        initialized = true;
     }
 
     void Update()
     {
         if (enemyControl != null && enemyControl.HP <= 0) return;
+        if (!initialized) return;
 
         currentTarget = PickTarget();
         if (currentTarget == null) return;
@@ -88,7 +96,6 @@ public class EnemyAI : MonoBehaviour
 
     Transform PickTarget()
     {
-        // 优先攻击防御目标（水塔），其次攻击玩家，谁近打谁
         Transform best = null;
 
         if (defenseTarget != null && defenseTarget.HP > 0)

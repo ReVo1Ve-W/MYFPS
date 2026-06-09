@@ -7,6 +7,9 @@ public class PlayerHUD : MonoBehaviour
     public PlayerControl player;
     public TextMeshProUGUI hpText;
     public Image hpFill;
+    public TextMeshProUGUI killCountText;
+
+    private int killCount;
 
     void Start()
     {
@@ -23,5 +26,11 @@ public class PlayerHUD : MonoBehaviour
 
         hpFill.fillAmount = hp / maxHP;
         hpText.text = $"HP {hp:F0} / {maxHP}";
+        killCountText.text = $"Kill Count: {killCount}";
+    }
+
+    public void AddKill()
+    {
+        killCount++;
     }
 }
