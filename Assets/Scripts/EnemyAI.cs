@@ -20,6 +20,7 @@ public class EnemyAI : MonoBehaviour
 
     [Header("引用")]
     public Transform player;
+    public DefenseTarget defenseTarget;
 
     private State state;
     private NavMeshAgent agent;
@@ -27,6 +28,7 @@ public class EnemyAI : MonoBehaviour
     private Animator anim;
     private Vector3 startPosition;
 
+    private Transform currentTarget;
     private float idleTimer;
     private float loseTimer;
     private float attackTimer;
@@ -58,6 +60,9 @@ public class EnemyAI : MonoBehaviour
             if (go != null) player = go.transform;
         }
 
+        if (defenseTarget == null)
+            defenseTarget = FindObjectOfType<DefenseTarget>();
+
         TransitionTo(State.Idle);
         idleTimer = 0;
     }
@@ -65,7 +70,9 @@ public class EnemyAI : MonoBehaviour
     void Update()
     {
         if (enemyControl != null && enemyControl.HP <= 0) return;
-        if (player == null) return;
+
+        currentTarget = PickTarget();
+        if (currentTarget == null) return;
 
         UpdateAnimator();
 
@@ -77,11 +84,37 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    // ═══════════════ 目标选择 ═══════════════
+
+    Transform PickTarget()
+    {
+        // 优先攻击防御目标（水塔），其次攻击玩家，谁近打谁
+        Transform best = null;
+
+        if (defenseTarget != null && defenseTarget.HP > 0)
+            best = defenseTarget.transform;
+
+        if (player != null)
+        {
+            if (best == null)
+                best = player;
+            else
+            {
+                float sqrToPlayer = (player.position - transform.position).sqrMagnitude;
+                float sqrToBest   = (best.position - transform.position).sqrMagnitude;
+                if (sqrToPlayer < sqrToBest)
+                    best = player;
+            }
+        }
+
+        return best;
+    }
+
     // ═══════════════ 空闲 / 巡逻 ═══════════════
 
     void StateIdle()
     {
-        if (PlayerInRange(detectionRange)) { TransitionTo(State.Chase); return; }
+        if (TargetInRange(detectionRange)) { TransitionTo(State.Chase); return; }
 
         idleTimer += Time.deltaTime;
         if (idleTimer >= patrolWaitTime)
@@ -114,7 +147,7 @@ public class EnemyAI : MonoBehaviour
 
     void StateChase()
     {
-        float sqrDist = SqrDistanceToPlayer();
+        float sqrDist = SqrDistanceToTarget();
 
         if (sqrDist <= sqrAttackRange) { TransitionTo(State.Attack); return; }
 
@@ -132,7 +165,7 @@ public class EnemyAI : MonoBehaviour
         if (pathUpdateTimer >= pathUpdateInterval)
         {
             pathUpdateTimer = 0;
-            agent.SetDestination(player.position);
+            agent.SetDestination(currentTarget.position);
         }
         agent.isStopped = false;
     }
@@ -141,20 +174,22 @@ public class EnemyAI : MonoBehaviour
 
     void StateAttack()
     {
-        float sqrDist = SqrDistanceToPlayer();
+        float sqrDist = SqrDistanceToTarget();
 
         if (sqrDist > sqrDetectionRange) { TransitionTo(State.Idle); return; }
         if (sqrDist > sqrAttackRange)   { TransitionTo(State.Chase); return; }
 
         agent.isStopped = true;
-        FacePlayer();
+        FaceTarget();
 
         attackTimer += Time.deltaTime;
         if (attackTimer >= attackCooldown)
         {
             attackTimer = 0;
-            var pc = player.GetComponent<PlayerControl>();
-            if (pc != null) pc.TakeDamage(attackDamage);
+            if (currentTarget.TryGetComponent<PlayerControl>(out var pc))
+                pc.TakeDamage(attackDamage);
+            else if (currentTarget.TryGetComponent<DefenseTarget>(out var dt))
+                dt.TakeDamage(attackDamage);
         }
     }
 
@@ -170,19 +205,19 @@ public class EnemyAI : MonoBehaviour
         agent.isStopped = (newState == State.Attack);
     }
 
-    float SqrDistanceToPlayer()
+    float SqrDistanceToTarget()
     {
-        return (player.position - transform.position).sqrMagnitude;
+        return (currentTarget.position - transform.position).sqrMagnitude;
     }
 
-    bool PlayerInRange(float range)
+    bool TargetInRange(float range)
     {
-        return SqrDistanceToPlayer() <= range * range;
+        return SqrDistanceToTarget() <= range * range;
     }
 
-    void FacePlayer()
+    void FaceTarget()
     {
-        Vector3 dir = player.position - transform.position;
+        Vector3 dir = currentTarget.position - transform.position;
         dir.y = 0;
         if (dir.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 5f);
