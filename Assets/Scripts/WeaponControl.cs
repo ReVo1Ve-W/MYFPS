@@ -1,19 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class WeaponControl : MonoBehaviour
 {
-    
-    //发射位置
     public GameObject FirePoint;
-    //子弹
     public GameObject BulletPre;
-    //火焰效果
     public GameObject FirePre;
-    //攻击间隔
-    public float bulletInterval=0.3f;
-    private float timer=0;
+    public float bulletInterval = 0.3f;
+
+    private float timer;
     private PlayerControl pc;
     private RecoilControl rc;
     void Start()

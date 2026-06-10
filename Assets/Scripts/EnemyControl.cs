@@ -12,6 +12,8 @@ public class EnemyControl : MonoBehaviour
     public TextMeshProUGUI hpText;
 
     private EnemyAI ai;
+    private ObjectPool pool;
+    private static PlayerHUD cachedHUD;
 
     void Awake()
     {
@@ -43,12 +45,18 @@ public class EnemyControl : MonoBehaviour
                 Destroy(effect, 2f);
             }
 
-            if (WaveManager.Instance != null)
-                WaveManager.Instance.OnEnemyKilled();
-            var hud = FindObjectOfType<PlayerHUD>();
-            if (hud != null) hud.AddKill();
+            WaveManager.Instance?.OnEnemyKilled();
 
-            gameObject.SetActive(false);
+            if (cachedHUD == null)
+                cachedHUD = FindObjectOfType<PlayerHUD>();
+            cachedHUD?.AddKill();
+
+            if (pool == null)
+                pool = FindObjectOfType<ObjectPool>();
+            if (pool != null)
+                pool.Despawn(gameObject);
+            else
+                gameObject.SetActive(false);
         }
     }
 

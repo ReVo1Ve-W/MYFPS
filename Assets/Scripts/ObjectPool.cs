@@ -14,12 +14,15 @@ public class ObjectPool : MonoBehaviour
 
     public Pool[] pools;
     private Dictionary<string, Queue<GameObject>> poolDict;
+    private Dictionary<string, GameObject> prefabDict;
+    private Dictionary<GameObject, string> spawnedTags;
 
     void Awake()
     {
         poolDict = new Dictionary<string, Queue<GameObject>>();
+        prefabDict = new Dictionary<string, GameObject>();
+        spawnedTags = new Dictionary<GameObject, string>();
 
-        // 找一个 NavMesh 上的位置，避免 NavMeshAgent 初始化报错
         Vector3 spawnPos = transform.position;
         if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 100f, NavMesh.AllAreas))
             spawnPos = hit.position;
@@ -27,6 +30,7 @@ public class ObjectPool : MonoBehaviour
         foreach (var pool in pools)
         {
             var queue = new Queue<GameObject>();
+            prefabDict[pool.tag] = pool.prefab;
 
             for (int i = 0; i < pool.size; i++)
             {
@@ -57,17 +61,19 @@ public class ObjectPool : MonoBehaviour
             Vector3 p = transform.position;
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 100f, NavMesh.AllAreas))
                 p = hit.position;
-            obj = Instantiate(pools[System.Array.FindIndex(pools, p => p.tag == tag)].prefab, p, Quaternion.identity, transform);
+            obj = Instantiate(prefabDict[tag], p, Quaternion.identity, transform);
         }
+
+        spawnedTags[obj] = tag;
 
         obj.transform.SetPositionAndRotation(position, rotation);
         obj.SetActive(true);
         return obj;
     }
 
-    public void Despawn(string tag, GameObject obj)
+    public void Despawn(GameObject obj)
     {
-        if (!poolDict.TryGetValue(tag, out var queue))
+        if (!spawnedTags.TryGetValue(obj, out var tag))
         {
             Destroy(obj);
             return;
@@ -75,6 +81,6 @@ public class ObjectPool : MonoBehaviour
 
         obj.SetActive(false);
         obj.transform.SetParent(transform);
-        queue.Enqueue(obj);
+        poolDict[tag].Enqueue(obj);
     }
 }

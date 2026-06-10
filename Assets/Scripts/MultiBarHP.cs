@@ -33,6 +33,8 @@ public class MultiBarHP : MonoBehaviour
         if (target == null)
             target = GetComponentInParent<DefenseTarget>();
 
+        if (target == null) return;
+
         hpPerBar = target.maxHP / barCount;
     }
 
