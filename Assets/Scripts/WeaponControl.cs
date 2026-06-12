@@ -27,7 +27,8 @@ public class WeaponControl : MonoBehaviour
         //发射子弹
         Instantiate(BulletPre,FirePoint.transform.position,FirePoint.transform.rotation);
         //火焰效果
-        var effect= Instantiate(FirePre,FirePoint.transform.position,FirePoint.transform.rotation);            Destroy(effect,0.1f);
+        var effect= Instantiate(FirePre,FirePoint.transform.position,FirePoint.transform.rotation); 
+        Destroy(effect,0.1f);
         }
     }
 }

@@ -30,10 +30,7 @@ public class PlayerControl : MonoBehaviour
 
     void Awake()
     {
-        // 240Hz 优化：提高物理频率，关闭 VSync
-        Time.fixedDeltaTime = 1f / 120f;
-        Application.targetFrameRate = 240;
-        QualitySettings.vSyncCount = 0;
+        QualitySettings.vSyncCount = 1;
     }
 
     void Start()
